@@ -50,16 +50,27 @@ function vjcf_purge_callback() {
 			$result=exec('curl -X DELETE "https://api.cloudflare.com/client/v4/zones/'.$zoneid.'/purge_cache" -H "X-Auth-Email: '.$xauth_email.'" -H "X-Auth-Key: '.$xauth_key.'" -H "Content-Type: application/json" --data \'{"purge_everything":true}\'');
 		}
 	}
-
-	echo json_encode($result); wp_die(); 
+	
+	$result_decode=json_decode($result);
+	if($result_decode->success){
+		if(! parse_url($_GET["return"])["query"]){
+			$symbol="?";
+		}else{
+			$symbol="&";
+		}
+		
+		header("location:". $_GET["return"].$symbol."vjcf_purgesuccess=true&vjcf_purgemessage=".$result);
+	}else{
+		echo json_encode($result);
+	}
+	wp_die(); 
 }add_action( 'wp_ajax_vjcf_purge', 'vjcf_purge_callback' );
-
 
 function vjcf_adminbar( $wp_admin_bar ) {
 	$args = array(
 		'id'    => 'vjcp',
 		'title' => 'Purge Cloudflare',
-		'href'  => admin_url( 'admin-ajax.php' ).'?action=vjcf_purge',
+		'href'  => admin_url( 'admin-ajax.php' ).'?action=vjcf_purge&return='.urlencode((isset($_SERVER['HTTPS']) ? "https" : "http") . "://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]"),
 		'meta'  => array( 'class' => 'my-toolbar-page' )
 	);
 	$wp_admin_bar->add_node( $args );
@@ -68,13 +79,11 @@ function vjcf_adminbar( $wp_admin_bar ) {
 function vjcf_inlinejs(){ ?>
 <script>
 function vjcf_purge(){
-		var data = {
-			'action': 'vjcf_purge',
-		};
+		var data = {'action': 'vjcf_purge',};
 
 		jQuery.get(ajaxurl, data, function(response) {
-			console.log(ajaxurl);
-			console.log(data);
+			//console.log(ajaxurl);
+			//console.log(data);
 			response=(JSON.parse(response));
 			if(response.success === true){
 				alert("Success");
@@ -84,4 +93,15 @@ function vjcf_purge(){
 		}, "json");
 }
 </script>
-<?php }add_action( 'admin_print_scripts', 'vjcf_inlinejs' ); ?>
+<?php }add_action( 'admin_print_scripts', 'vjcf_inlinejs' ); 
+
+function vjcf_adminnotice() {
+	if($_GET["vjcf_purgesuccess"]){
+    ?>
+    <div class="notice notice-success is-dismissible">
+        <p>Pluge cloudflare success: <br /><?=stripslashes($_GET["vjcf_purgemessage"]);?></p>
+    </div>
+    <?php
+}}
+add_action( 'admin_notices', 'vjcf_adminnotice' );
+?>
