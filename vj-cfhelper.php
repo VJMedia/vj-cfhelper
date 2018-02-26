@@ -4,6 +4,7 @@ Plugin Name: VJMedia: Cloudflare Helper
 Description: Cloudflare Toolbox
 Version: 1.0
 Author: <a href="http://www.vjmedia.com.hk">VJMedia Technical Team</a>
+GitHub Plugin URI: https://github.com/VJMedia/vj-cfhelper
 */
 
 function vjcf_pluginsettings() {
