@@ -107,8 +107,11 @@ add_action( 'admin_notices', 'vjcf_adminnotice' );
 
 function vjcf_saveposthook( $post_id ) {
 
-	if ( wp_is_post_revision( $post_id ) )
-		return;
+	if (wp_is_post_revision($post_id) ||
+		wp_is_post_autosave($post_id) ||
+		get_post_status($post_id)=="auto-draft" ||
+		get_post_status($post_id)=="draft")
+			return;
 
 	$post_url = get_permalink( $post_id );
 	
