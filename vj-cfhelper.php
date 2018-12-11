@@ -106,14 +106,17 @@ function vjcf_adminnotice() {
 add_action( 'admin_notices', 'vjcf_adminnotice' );
 
 function vjcf_saveposthook( $post_id ) {
-
-	if (wp_is_post_revision($post_id) ||
+	if (
+		get_post_type($post_id) != "post" ||
+		wp_is_post_revision($post_id) ||
 		wp_is_post_autosave($post_id) ||
 		get_post_status($post_id)=="auto-draft" ||
-		get_post_status($post_id)=="draft")
-			return;
+		get_post_status($post_id)=="draft"
+	) return;
 
-	$post_url = get_permalink( $post_id );
+	$post_url = get_permalink( );
+	$ogurl=vjmedia_ogurl($post_id);
+	$wildcard_url=$ogurl."/*";
 	
 	$zoneid=esc_attr( get_option('vjmedia_cfhelper_zoneid')) ?? false;
 	$xauth_email=esc_attr( get_option('vjmedia_cfhelper_xauth_email')) ?? false;
@@ -122,11 +125,12 @@ function vjcf_saveposthook( $post_id ) {
 	if(! $zoneid || ! $xauth_email || ! $xauth_key){
 
 	}else{
-		$result=exec($q='curl -X DELETE "https://api.cloudflare.com/client/v4/zones/'.$zoneid.'/purge_cache" -H "X-Auth-Email: '.$xauth_email.'" -H "X-Auth-Key: '.$xauth_key.'" -H "Content-Type: application/json" --data \'{"files":["'.$post_url.'"]}\'');
+		$result=exec($q='curl -X DELETE "https://api.cloudflare.com/client/v4/zones/'.$zoneid.'/purge_cache" -H "X-Auth-Email: '.$xauth_email.'" -H "X-Auth-Key: '.$xauth_key.'" -H "Content-Type: application/json" --data \'{"files":["'.$post_url.'","'.$ogurl.'","'.$wildcard_url.'"]}\'');
 
 		$result_decode=json_decode($result);
 		if($result_decode->success){
-
+			//echo $q;
+			//exit();
 		}else{
 			echo "Failed to purge cloudflare cache, please contact Sheep Sheep: ";
 			var_dump($result_decode);
