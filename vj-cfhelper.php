@@ -7,6 +7,8 @@ Author: <a href="http://www.vjmedia.com.hk">VJMedia Technical Team</a>
 GitHub Plugin URI: https://github.com/VJMedia/vj-cfhelper
 */
 
+defined('WPINC') || (header("location: /") && die());
+
 function vjcf_dummy(){}
 
 function vjcf_pluginsettings() {
