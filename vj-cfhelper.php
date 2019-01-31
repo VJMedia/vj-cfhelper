@@ -41,6 +41,7 @@ function vjcf_settingspage(){
 <?php }
 
 
+
 function vjcf_purge_callback() {
 	$zoneid=esc_attr( get_option('vjmedia_cfhelper_zoneid')) ?? false;
 	$xauth_email=esc_attr( get_option('vjmedia_cfhelper_xauth_email')) ?? false;
@@ -119,26 +120,42 @@ function vjcf_saveposthook( $post_id ) {
 	$post_url = get_permalink( );
 	$ogurl=vjmedia_ogurl($post_id);
 	$wildcard_url=$ogurl."/*";
+
+	//$result=exec($q='curl -X DELETE "https://api.cloudflare.com/client/v4/zones/'.$zoneid.'/purge_cache" -H "X-Auth-Email: '.$xauth_email.'" -H "X-Auth-Key: '.$xauth_key.'" -H "Content-Type: application/json" --data \'{"files":["'.$post_url.'","'.$ogurl.'","'.$wildcard_url.'"]}\'');
 	
-	$zoneid=esc_attr( get_option('vjmedia_cfhelper_zoneid')) ?? false;
-	$xauth_email=esc_attr( get_option('vjmedia_cfhelper_xauth_email')) ?? false;
-	$xauth_key=esc_attr( get_option('vjmedia_cfhelper_xauth_key')) ?? false;
-
-	if(! $zoneid || ! $xauth_email || ! $xauth_key){
-
+	$result = vjcf_dopurge([$post_url,$ogurl,$wildcard_url]);
+	$result_decode=json_decode($result);
+	
+	if($result_decode->success){
+		//echo $q;
+		//exit();
 	}else{
-		$result=exec($q='curl -X DELETE "https://api.cloudflare.com/client/v4/zones/'.$zoneid.'/purge_cache" -H "X-Auth-Email: '.$xauth_email.'" -H "X-Auth-Key: '.$xauth_key.'" -H "Content-Type: application/json" --data \'{"files":["'.$post_url.'","'.$ogurl.'","'.$wildcard_url.'"]}\'');
-
-		$result_decode=json_decode($result);
-		if($result_decode->success){
-			//echo $q;
-			//exit();
-		}else{
-			echo "Failed to purge cloudflare cache, please contact Sheep Sheep: ";
-			var_dump($result_decode);
-			wp_die();
-		}
+		echo "Failed to purge cloudflare cache, please contact Sheep Sheep: ";
+		var_dump($result_decode);
+		var_dump($result);
+		wp_die();
 	}
 }
 add_action( 'save_post', 'vjcf_saveposthook' );
+
+function vjcf_dopurge($url){
+
+	$zoneid=esc_attr( get_option('vjmedia_cfhelper_zoneid')) ?? false;
+	$xauth_email=esc_attr( get_option('vjmedia_cfhelper_xauth_email')) ?? false;
+	$xauth_key=esc_attr( get_option('vjmedia_cfhelper_xauth_key')) ?? false;
+	
+	if(is_array($url)){
+		$url = '"'.implode('","',$url).'"';
+	}else{
+		$url = '"'.$url.'"';
+	}
+	
+	if(! $zoneid || ! $xauth_email || ! $xauth_key){
+		$result = false;
+	}else{
+		$result=exec($q='curl -X DELETE "https://api.cloudflare.com/client/v4/zones/'.$zoneid.'/purge_cache" -H "X-Auth-Email: '.$xauth_email.'" -H "X-Auth-Key: '.$xauth_key.'" -H "Content-Type: application/json" --data \'{"files":['.$url.']}\'');	
+	}
+	
+	return $result;
+}
 ?>
