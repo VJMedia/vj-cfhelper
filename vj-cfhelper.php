@@ -120,10 +120,6 @@ function vjcf_saveposthook( $post_id ) {
 	$post_url = get_permalink( );
 	$ogurl=vjmedia_ogurl($post_id);
 	$wildcard_url=$ogurl."/*";
-	
-	/*var_dump($post_url);
-	var_dump($ogurl);
-	var_dump($wildcard_url);*/
 
 	//$result=exec($q='curl -X DELETE "https://api.cloudflare.com/client/v4/zones/'.$zoneid.'/purge_cache" -H "X-Auth-Email: '.$xauth_email.'" -H "X-Auth-Key: '.$xauth_key.'" -H "Content-Type: application/json" --data \'{"files":["'.$post_url.'","'.$ogurl.'","'.$wildcard_url.'"]}\'');
 	
@@ -137,6 +133,9 @@ function vjcf_saveposthook( $post_id ) {
 		echo "Failed to purge cloudflare cache, please contact Sheep Sheep: ";
 		var_dump($result_decode);
 		var_dump($result);
+		var_dump($post_url);
+		var_dump($ogurl);
+		var_dump($wildcard_url);
 		wp_die();
 	}
 }
@@ -157,9 +156,14 @@ function vjcf_dopurge($url){
 	if(! $zoneid || ! $xauth_email || ! $xauth_key){
 		$result = false;
 	}else{
-		$result=exec($q='curl -X DELETE "https://api.cloudflare.com/client/v4/zones/'.$zoneid.'/purge_cache" -H "X-Auth-Email: '.$xauth_email.'" -H "X-Auth-Key: '.$xauth_key.'" -H "Content-Type: application/json" --data \'{"files":['.$url.']}\'');	
+		exec($q='curl -X DELETE "https://api.cloudflare.com/client/v4/zones/'.$zoneid.'/purge_cache" -H "X-Auth-Email: '.$xauth_email.'" -H "X-Auth-Key: '.$xauth_key.'" -H "Content-Type: application/json" --data \'{"files":['.$url.']}\'', $out);	
+		
+		foreach($out as $line) {
+			echo $result.=$line;
+		}
+		
+		
 	}
-	
 	return $result;
 }
 ?>
